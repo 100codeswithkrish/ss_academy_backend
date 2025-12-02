@@ -10,8 +10,8 @@ app.use(bodyParser.json());
 
 // CORS: allow all origins (or replace with your frontend domain)
 app.use(cors({
-  origin: "https://100codeswithkrishssacademy.vercel.app", // replace with your actual Vercel URL
-  credentials: true, // allows cookies/auth headers
+  origin: true, // allow all origins temporarily
+  credentials: true,
 }));
 
 // Routes
