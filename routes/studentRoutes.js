@@ -5,8 +5,10 @@ const db = require("../db/db");
 // 👉 Add student with fee setup
 router.post("/add", async (req, res) => {
   try {
-    const { name, class_std, roll_no, parent_phone, address, total_fee } =
-      req.body;
+    let { name, class_std, roll_no, parent_phone, address, total_fee } = req.body;
+
+    // Convert empty roll_no to null so DB accepts it
+    roll_no = roll_no === "" ? null : Number(roll_no);
 
     const query = `
       INSERT INTO students 
@@ -23,6 +25,13 @@ router.post("/add", async (req, res) => {
       address,
       total_fee,
     ]);
+
+    res.json({ success: true, student: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
     res.json({ success: true, student: result.rows[0] });
   } catch (error) {
