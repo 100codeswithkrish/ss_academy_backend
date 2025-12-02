@@ -9,7 +9,10 @@ const app = express();
 app.use(bodyParser.json());
 
 // CORS: allow all origins (or replace with your frontend domain)
-app.use(cors());
+app.use(cors({
+  origin: "https://100codeswithkrishssacademy.vercel.app", // replace with your actual Vercel URL
+  credentials: true, // allows cookies/auth headers
+}));
 
 // Routes
 const studentRoutes = require("./routes/studentRoutes");
