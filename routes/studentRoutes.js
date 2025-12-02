@@ -7,8 +7,8 @@ router.post("/add", async (req, res) => {
   try {
     let { name, class_std, roll_no, parent_phone, address, total_fee } = req.body;
 
-    // Convert empty roll_no to null so DB accepts it
-    roll_no = roll_no === "" ? null : Number(roll_no);
+    // Make roll_no optional: if empty string or undefined, set to null
+    roll_no = roll_no === "" || roll_no === undefined ? null : Number(roll_no);
 
     const query = `
       INSERT INTO students 
@@ -32,13 +32,6 @@ router.post("/add", async (req, res) => {
   }
 });
 
-
-    res.json({ success: true, student: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 // 👉 Get all students
 router.get("/list", async (req, res) => {
   try {
@@ -55,9 +48,10 @@ router.put("/update-fee/:student_id", async (req, res) => {
     const { student_id } = req.params;
     const { total_fee } = req.body;
 
-    const prev = await db.query("SELECT paid_fee FROM students WHERE id=$1", [
-      student_id,
-    ]);
+    const prev = await db.query(
+      "SELECT paid_fee FROM students WHERE id=$1",
+      [student_id]
+    );
 
     if (prev.rows.length === 0) {
       return res
