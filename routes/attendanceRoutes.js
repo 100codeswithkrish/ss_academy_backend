@@ -7,10 +7,8 @@ const db = require("../db/db");
 // ===============================
 router.post("/mark-batch", async (req, res) => {
   const client = await db.connect();
-
   try {
     const { batch_id, date, marked_by, students } = req.body;
-
     await client.query("BEGIN");
 
     const attendanceRecords = [];
@@ -18,10 +16,9 @@ router.post("/mark-batch", async (req, res) => {
     const absentStudents = [];
 
     for (const student of students) {
-      // Check if attendance already marked
       const checkQuery = `
         SELECT * FROM attendance
-        WHERE batch_id = $1 AND student_id = $2 AND date = $3;
+        WHERE batch_id = $1 AND student_id = $2 AND date = $3
       `;
       const checkResult = await client.query(checkQuery, [
         batch_id,
@@ -38,11 +35,10 @@ router.post("/mark-batch", async (req, res) => {
         continue;
       }
 
-      // Insert attendance
       const insertQuery = `
         INSERT INTO attendance (batch_id, date, student_id, status, marked_by)
         VALUES ($1, $2, $3, $4, $5)
-        RETURNING *;
+        RETURNING *
       `;
       const result = await client.query(insertQuery, [
         batch_id,
@@ -51,25 +47,21 @@ router.post("/mark-batch", async (req, res) => {
         student.status,
         marked_by,
       ]);
+
       attendanceRecords.push(result.rows[0]);
 
-      // Fetch student name for report
       const studentRes = await client.query(
         "SELECT name FROM students WHERE id=$1",
         [student.student_id]
       );
       const studentName = studentRes.rows[0]?.name || `ID:${student.student_id}`;
 
-      if (student.status.toUpperCase() === "P") {
-        presentStudents.push(studentName);
-      } else if (student.status.toUpperCase() === "A") {
-        absentStudents.push(studentName);
-      }
+      if (student.status.toUpperCase() === "P") presentStudents.push(studentName);
+      if (student.status.toUpperCase() === "A") absentStudents.push(studentName);
     }
 
     await client.query("COMMIT");
 
-    // Generate report
     const report = `
 Attendance Report for Batch ${batch_id} on ${new Date(
       date
@@ -97,7 +89,7 @@ ${absentStudents.length ? absentStudents.join("\n") : "None"}
 router.get("/student-history", async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT a.*, s.name AS student_name, b.name AS batch_name
+      SELECT a.*, s.name AS student_name, b.batch_name AS batch_name
       FROM attendance a
       JOIN students s ON a.student_id = s.id
       JOIN batches b ON a.batch_id = b.id
@@ -128,16 +120,16 @@ router.get("/student-history", async (req, res) => {
 });
 
 // ===============================
-// OPTIONAL: GET BATCH-WISE ATTENDANCE HISTORY
+// GET BATCH-WISE ATTENDANCE HISTORY
 // ===============================
 router.get("/batch-history", async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT a.*, s.name AS student_name, b.name AS batch_name
+      SELECT a.*, s.name AS student_name, b.batch_name AS batch_name
       FROM attendance a
       JOIN students s ON a.student_id = s.id
       JOIN batches b ON a.batch_id = b.id
-      ORDER BY b.name, a.date DESC
+      ORDER BY b.batch_name, a.date DESC
     `);
 
     const batches = {};
